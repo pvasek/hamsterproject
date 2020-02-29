@@ -16,8 +16,8 @@ type Detector struct {
 }
 
 // NewDetector creates a new motion detector
-func NewDetector(minArea float64) Detector {
-	return Detector{
+func NewDetector(minArea float64) *Detector {
+	return &Detector{
 		img:     gocv.NewMat(),
 		imgdt:   gocv.NewMat(),
 		imgth:   gocv.NewMat(),
@@ -68,4 +68,9 @@ func (d *Detector) Detect() (bool, [][]image.Point) {
 		break
 	}
 	return m, cl
+}
+
+// Img returns current image
+func (d *Detector) Img() *gocv.Mat {
+	return &d.img
 }

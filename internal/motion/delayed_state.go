@@ -20,7 +20,9 @@ func NewDelayedState(minOn time.Duration, minOff time.Duration) DelayedState {
 	}
 }
 
-func (md *DelayedState) detect(on bool, now time.Time) bool {
+// Detect if the state is on/off based on time from last state
+func (md *DelayedState) Detect(on bool, now time.Time) (bool, bool) {
+	p := md.on
 	if on {
 		md.lastOn = now
 	} else {
@@ -42,5 +44,5 @@ func (md *DelayedState) detect(on bool, now time.Time) bool {
 		md.on = false
 	}
 
-	return md.on
+	return p != md.on, md.on
 }
