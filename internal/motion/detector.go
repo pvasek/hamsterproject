@@ -8,21 +8,23 @@ import (
 
 // Detector for motion
 type Detector struct {
-	img     gocv.Mat
-	imgth   gocv.Mat
-	imgdt   gocv.Mat
-	mog2    gocv.BackgroundSubtractorMOG2
-	minArea float64
+	img      gocv.Mat
+	imgth    gocv.Mat
+	imgdt    gocv.Mat
+	mog2     gocv.BackgroundSubtractorMOG2
+	minArea  float64
+	trashold float32
 }
 
 // NewDetector creates a new motion detector
-func NewDetector(minArea float64) *Detector {
+func NewDetector(minArea float64, trashold float32) *Detector {
 	return &Detector{
-		img:     gocv.NewMat(),
-		imgdt:   gocv.NewMat(),
-		imgth:   gocv.NewMat(),
-		mog2:    gocv.NewBackgroundSubtractorMOG2(),
-		minArea: minArea,
+		img:      gocv.NewMat(),
+		imgdt:    gocv.NewMat(),
+		imgth:    gocv.NewMat(),
+		mog2:     gocv.NewBackgroundSubtractorMOG2(),
+		minArea:  minArea,
+		trashold: trashold,
 	}
 }
 
@@ -46,7 +48,7 @@ func (d *Detector) Detect() (bool, [][]image.Point) {
 
 	// remaining cleanup of the image to use for finding contours.
 	// first use threshold
-	gocv.Threshold(d.imgdt, &d.imgth, 80, 255, gocv.ThresholdBinary)
+	gocv.Threshold(d.imgdt, &d.imgth, d.trashold, 255, gocv.ThresholdBinary)
 
 	// then dilate
 	kernel := gocv.GetStructuringElement(gocv.MorphRect, image.Pt(3, 3))

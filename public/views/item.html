@@ -1,0 +1,35 @@
+{{define "item"}}
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Page</title>
+    <style>
+        body {
+            background-color: #eee;
+        }        
+
+        .item-container {
+            display: flex;
+            justify-content: center;
+        }
+        .item {
+            border-radius: 6px;
+            max-width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="item-container">
+        <video title="live"  class="item" controls autoplay>
+            <source src="/api/motions/{{.ID}}/video" type="video/mp4" />
+        </video>
+    </div>
+
+</body>
+
+</html>
+{{end}}

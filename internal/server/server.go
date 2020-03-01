@@ -20,34 +20,65 @@ import (
 	"gocv.io/x/gocv"
 )
 
+// Options for server
+type Options struct {
+	DeviceID string
+	Host     string
+	DataPath string
+	Codec    string
+	VideoExt string
+	Treshold float32
+	MinSize  float64
+}
+
 // Start creates echo server
-func Start(deviceID string, dataPath string, host string) {
+func Start(opt Options) {
 	out := mjpeg.NewStream()
 
-	store, err := data.OpenStore(path.Join(dataPath, "data.bolt"))
+	store, err := data.OpenStore(path.Join(opt.DataPath, "data.bolt"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer store.Close()
 
-	cam, err := gocv.OpenVideoCapture(deviceID)
+	cam, err := gocv.OpenVideoCapture(opt.DeviceID)
 	if err != nil {
-		panic(fmt.Errorf("Error opening video capture device: %v", deviceID))
+		panic(fmt.Errorf("Error opening video capture device: %v", opt.DeviceID))
 	}
 	defer cam.Close()
+	fmt.Printf("Camera mode: %v, format: %v", cam.Get(gocv.VideoCaptureMode), cam.Get(gocv.VideoCaptureFormat))
 
 	t := &Template{
 		templates: template.Must(template.ParseGlob("../../public/views/*.html")),
 	}
 
-	go captureLoop(cam, out, store, dataPath)
+	go captureLoop(cam, out, store, opt)
 
 	e := echo.New()
 	e.Renderer = t
 
 	e.GET("/", func(c echo.Context) error {
-		// return c.String(http.StatusOK, "Hello, World!")
-		return c.Render(http.StatusOK, "index", "World")
+		m, err := store.GetAllMotions()
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "cannot read motions")
+		}
+		reverse(m)
+		return c.Render(http.StatusOK, "index", m)
+	})
+
+	e.GET("/item/:id", func(c echo.Context) error {
+		i := c.Param("id")
+		id, err := strconv.ParseUint(i, 10, 0)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "cannot read id")
+		}
+
+		m, err := store.GetMotion(id)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "cannot read motion")
+		}
+
+		return c.Render(http.StatusOK, "item", m)
 	})
 
 	e.GET("/live", func(c echo.Context) error {
@@ -55,13 +86,23 @@ func Start(deviceID string, dataPath string, host string) {
 		return c.String(http.StatusOK, "")
 	})
 
-	e.GET("/api/video/:id", func(c echo.Context) error {
+	e.GET("/api/motions/:id/video", func(c echo.Context) error {
 		id, err := strconv.ParseUint(c.Param("id"), 10, 0)
 		if err != nil {
 			return c.String(http.StatusNotFound, "wrong id")
 		}
 		i, err := store.GetMotion(id)
 		return c.File(i.FileName)
+	})
+
+	e.GET("/api/motions/:id/preview", func(c echo.Context) error {
+		id, err := strconv.ParseUint(c.Param("id"), 10, 0)
+		if err != nil {
+			return c.String(http.StatusNotFound, "wrong id")
+		}
+		i, err := store.GetMotion(id)
+
+		return c.File(i.PreviewFileName)
 	})
 
 	e.GET("/api/motions", func(c echo.Context) error {
@@ -75,14 +116,14 @@ func Start(deviceID string, dataPath string, host string) {
 	if err != nil {
 		panic(err)
 	}
-	e.Logger.Fatal(e.Start(host))
+	e.Logger.Fatal(e.Start(opt.Host))
 }
 
-func captureLoop(cam *gocv.VideoCapture, out *mjpeg.Stream, store *data.Store, dataPath string) {
+func captureLoop(cam *gocv.VideoCapture, out *mjpeg.Stream, store *data.Store, options Options) {
 	delayedState := motion.NewDelayedState(400*time.Millisecond, 1*time.Second)
-	det := motion.NewDetector(3000)
+	det := motion.NewDetector(options.MinSize, options.Treshold)
 	defer det.Close()
-	tl := video.NewTimeline("MJPG", path.Join(dataPath, "video_%v.avi"))
+	tl := video.NewTimeline(options.DataPath, options.Codec, options.VideoExt)
 	defer tl.Close()
 
 	red := color.RGBA{255, 0, 0, 0}
@@ -107,11 +148,12 @@ func captureLoop(cam *gocv.VideoCapture, out *mjpeg.Stream, store *data.Store, d
 				tl.NewItem()
 				status = "REC"
 			} else {
-				start, dur, name := tl.CloseItem()
+				start, dur, name, preview := tl.CloseItem()
 				item := data.Motion{
-					FileName:  name,
-					StartTime: start,
-					Duration:  dur,
+					FileName:        name,
+					PreviewFileName: preview,
+					StartTime:       start,
+					Duration:        dur,
 				}
 				store.UpdateMotion(&item)
 				status = ""
@@ -137,5 +179,11 @@ func captureLoop(cam *gocv.VideoCapture, out *mjpeg.Stream, store *data.Store, d
 		// update web stream
 		buf, _ := gocv.IMEncode(".jpg", *det.Img())
 		out.UpdateJPEG(buf)
+	}
+}
+
+func reverse(a []data.Motion) {
+	for left, right := 0, len(a)-1; left < right; left, right = left+1, right-1 {
+		a[left], a[right] = a[right], a[left]
 	}
 }

@@ -2,16 +2,63 @@
 <!doctype html>
 
 <html lang="en">
+
 <head>
-   <meta charset="utf-8">
-   <title>Page</title>
-   <link rel="stylesheet" href="css/styles.css?v=1.0">
+    <meta charset="utf-8">
+    <title>Page</title>
+    <style>
+        body {
+            background-color: #eee;
+        }
+
+        .list {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -10px;
+        }
+
+        .list-item {
+            margin: 10px;
+            border-radius: 7px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: white;
+        }
+
+        .list-item img {
+            max-width: 300px;
+        }
+
+        .live-container {
+            display: flex;
+            justify-content: center;
+        }
+        .live {
+            border: 2px solid red;
+            border-radius: 6px;
+            max-width: 100%;
+        }
+    </style>
 </head>
 
 <body>
-    <a href="/live">LIVE</a>
-   <script src="js/scripts.js"></script>
+    <div class="live-container">
+        <img title="live" src="/live" class="live">
+    </div>
+    <h1>Videos</h1>
+    <div class="list">
+        {{range .}}
+        <a class="list-item" href="/item/{{.ID}}">
+            <strong>{{.StartTime.Format "Jan 02 15:04:05"}}</strong>
+            <div>{{.Duration.Seconds}} sec</div>
+            <div>
+                <img src="/api/motions/{{.ID}}/preview" />
+            </div>
+        </a>
+        {{end}}
+    </div>
 
 </body>
+
 </html>
 {{end}}
