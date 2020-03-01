@@ -46,7 +46,7 @@ func (d *Detector) Detect() (bool, [][]image.Point) {
 
 	// remaining cleanup of the image to use for finding contours.
 	// first use threshold
-	gocv.Threshold(d.imgdt, &d.imgth, 25, 255, gocv.ThresholdBinary)
+	gocv.Threshold(d.imgdt, &d.imgth, 80, 255, gocv.ThresholdBinary)
 
 	// then dilate
 	kernel := gocv.GetStructuringElement(gocv.MorphRect, image.Pt(3, 3))

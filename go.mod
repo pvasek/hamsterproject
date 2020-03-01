@@ -22,9 +22,11 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	github.com/karrick/godirwalk v1.15.3 // indirect
 	github.com/kyokomi/emoji v2.1.0+incompatible // indirect
+	github.com/labstack/echo v3.3.10+incompatible // indirect
 	github.com/labstack/echo/v4 v4.1.14
 	github.com/lukehoban/go-outline v0.0.0-20161011150102-e78556874252 // indirect
 	github.com/manucorporat/stats v0.0.0-20180402194714-3ba42d56d227 // indirect
+	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mdempsky/gocode v0.0.0-20191202075140-939b4a677f2f // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/nicksnyder/go-i18n v1.10.1 // indirect
@@ -44,8 +46,11 @@ require (
 	github.com/uudashr/gopkgs v2.0.1+incompatible // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
 	github.com/yosssi/gohtml v0.0.0-20190915184251-7ff6f235ecaf // indirect
+	go.etcd.io/bbolt v1.3.2
 	gocv.io/x/gocv v0.22.0
+	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d // indirect
 	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/tools v0.0.0-20200228194328-a628ca32ebc0 // indirect
 	golang.org/x/tools/gopls v0.3.2 // indirect
