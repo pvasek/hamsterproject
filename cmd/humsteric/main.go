@@ -15,8 +15,8 @@ func main() {
 	dataPath := flag.String("dataPath", "", "the absolute path where data are stored")
 	treshold := flag.Float64("trashold", 30, "Trashold that will be skiped 0-255")
 	minSize := flag.Float64("minarea", 2000, "Min area that should be taken into account")
-	codec := flag.String("codec", "MJPG", "Codec that should be used")
-	videoExt := flag.String("videoExt", ".avi", "Video extension that should be used")
+	codec := flag.String("codec", "H264", "Codec that should be used")
+	videoExt := flag.String("videoExt", ".mp4", "Video extension that should be used")
 
 	flag.Parse()
 

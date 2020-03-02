@@ -92,7 +92,7 @@ func Start(opt Options) {
 			return c.String(http.StatusNotFound, "wrong id")
 		}
 		i, err := store.GetMotion(id)
-		return c.File(i.FileName)
+		return c.File(i.VideoFile)
 	})
 
 	e.GET("/api/motions/:id/preview", func(c echo.Context) error {
@@ -102,7 +102,7 @@ func Start(opt Options) {
 		}
 		i, err := store.GetMotion(id)
 
-		return c.File(i.PreviewFileName)
+		return c.File(i.PreviewFile)
 	})
 
 	e.GET("/api/motions", func(c echo.Context) error {
@@ -148,14 +148,18 @@ func captureLoop(cam *gocv.VideoCapture, out *mjpeg.Stream, store *data.Store, o
 				tl.NewItem()
 				status = "REC"
 			} else {
-				start, dur, name, preview := tl.CloseItem()
-				item := data.Motion{
-					FileName:        name,
-					PreviewFileName: preview,
-					StartTime:       start,
-					Duration:        dur,
+				item, err := tl.CloseItem()
+				if err == nil {
+					item := data.Motion{
+						VideoFile:   item.VideoFile,
+						PreviewFile: item.PreviewFile,
+						Start:       item.Start,
+						Duration:    item.Duration,
+					}
+					store.UpdateMotion(&item)
+					// TODO: write bounding rects to parquet file
+					// and stores it in different bucket with the same ID
 				}
-				store.UpdateMotion(&item)
 				status = ""
 			}
 		}
@@ -165,12 +169,15 @@ func captureLoop(cam *gocv.VideoCapture, out *mjpeg.Stream, store *data.Store, o
 		gocv.PutText(det.Img(), l, image.Pt(840, 25), gocv.FontHersheyPlain, 2.2, green, 1)
 
 		if on {
-			tl.Write(det.Img())
+			tl.WriteImage(det.Img())
 		}
 
 		// draw bounding rectangels
 		for _, c := range contours {
 			rect := gocv.BoundingRect(c)
+			if on {
+				tl.WriteRect(rect)
+			}
 			gocv.Rectangle(det.Img(), rect, blue, 2)
 		}
 

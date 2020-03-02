@@ -49,7 +49,7 @@
     <div class="list">
         {{range .}}
         <a class="list-item" href="/item/{{.ID}}">
-            <strong>{{.StartTime.Format "Jan 02 15:04:05"}}</strong>
+            <strong>{{.Start.Format "Jan 02 15:04:05"}}</strong>
             <div>{{.Duration.Seconds}} sec</div>
             <div>
                 <img src="/api/motions/{{.ID}}/preview" />

@@ -1,6 +1,8 @@
 package video
 
 import (
+	"fmt"
+	"image"
 	"io/ioutil"
 	"path"
 	"time"
@@ -14,10 +16,19 @@ type Timeline struct {
 	codec    string
 	videoExt string
 
-	currentItem     *gocv.VideoWriter
-	itemStart       time.Time
-	itemName        string
-	itemPreviewName string
+	currentItem *gocv.VideoWriter
+	item        *Item
+}
+
+// Item in timeline
+type Item struct {
+	Start           time.Time
+	VideoFile       string
+	PreviewFile     string
+	Duration        time.Duration
+	VideoFileSize   int
+	PreviewFileSize int
+	BoundingRects   []image.Rectangle
 }
 
 // NewTimeline create a new Timeline
@@ -37,41 +48,59 @@ func (t *Timeline) Close() {
 // NewItem creates a new item in timeline
 func (t *Timeline) NewItem() {
 	t.CloseItem()
-	t.itemStart = time.Now()
 	l := time.Now().Format("2006-01-02--15-04-05")
 	base := path.Join(t.dataPath, l)
-	t.itemName = base + t.videoExt
-	t.itemPreviewName = base + ".jpg"
 
+	t.item = &Item{
+		Start:           time.Now(),
+		VideoFile:       base + t.videoExt,
+		PreviewFile:     base + ".jpg",
+		VideoFileSize:   0,
+		PreviewFileSize: 0,
+		BoundingRects:   []image.Rectangle{},
+	}
 }
 
 // CloseItem closes the current item
-func (t *Timeline) CloseItem() (time.Time, time.Duration, string, string) {
+func (t *Timeline) CloseItem() (Item, error) {
 	if t.currentItem != nil {
 		t.currentItem.Close()
 		t.currentItem = nil
-		return t.itemStart, time.Now().Sub(t.itemStart), t.itemName, t.itemPreviewName
+		t.item.Duration = time.Now().Sub(t.item.Start)
+		return *t.item, nil
 	}
-	return time.Time{}, 0, "", ""
+	return Item{}, fmt.Errorf("No item to close")
 }
 
-// Write image to the current item
-func (t *Timeline) Write(img *gocv.Mat) error {
+// WriteImage image to the current item
+func (t *Timeline) WriteImage(img *gocv.Mat) error {
 	var err error
 	if t.currentItem == nil {
-		t.currentItem, err = gocv.VideoWriterFile(t.itemName, t.codec, 10, img.Cols(), img.Rows(), true)
+		t.currentItem, err = gocv.VideoWriterFile(
+			t.item.VideoFile, t.codec, 10, img.Cols(), img.Rows(), true)
+
 		if err == nil {
 			// generate preview
-			buf, e := gocv.IMEncode(".jpg", *img)
+			// preview := gocv.Mat{}
+			// gocv.Resize(*img, &preview, image.Point{}, 0.3, 0.3, gocv.InterpolationDefault)
+			preview := *img
+			buf, e := gocv.IMEncode(".jpg", preview)
 			if e == nil {
-				ioutil.WriteFile(t.itemPreviewName, buf, 0644)
+				ioutil.WriteFile(t.item.PreviewFile, buf, 0644)
+				t.item.PreviewFileSize = len(buf)
 			}
 		}
 	}
 
 	if err == nil {
+		t.item.VideoFileSize += img.Rows() * img.Cols()
 		return t.currentItem.Write(*img)
 	}
 
 	return err
+}
+
+// WriteRect write bounding rectangle
+func (t *Timeline) WriteRect(rect image.Rectangle) {
+	t.item.BoundingRects = append(t.item.BoundingRects, rect)
 }
